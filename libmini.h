@@ -135,12 +135,16 @@ extern long errno;
 #define SA_NOCLDWAIT 2          /* Don't create zombie on child death.  */
 #define SA_SIGINFO 4            /* Invoke signal-catching function with \
                                    three arguments instead of one.  */
+#define SA_RESTORER 0x04000000
 #define SA_ONSTACK 0x08000000   /* Use signal stack by using `sa_restorer'. */
 #define SA_RESTART 0x10000000   /* Restart syscall on signal return.  */
 #define SA_INTERRUPT 0x20000000 /* Historical no-op.  */
 #define SA_NODEFER 0x40000000   /* Don't automatically block the signal when \
                                    its handler is being executed.  */
 #define SA_RESETHAND 0x80000000 /* Reset to SIG_DFL on entry to handler.  */
+
+#define SA_NOMASK SA_NODEFER
+#define SA_ONESHOT SA_RESETHAND
 
 #define SIG_BLOCK 0   /* Block signals.  */
 #define SIG_UNBLOCK 1 /* Unblock signals.  */
@@ -165,37 +169,47 @@ struct timezone {
     int tz_dsttime;     /* type of DST correction */
 };
 
-struct sigset_t {
+
+
+typedef struct sigset {
     unsigned long sig[_NSIG_WORDS];
-};
-
-
+} sigset_t;
 
 /*Define sighandler*/
 typedef void __signalfn_t(int);
-typedef __signalfn_t *__sighandler_t;
+typedef __signalfn_t* __sighandler_t;
 
 /*define sigrestore*/
 typedef void __restorefn_t(void);
-typedef __restorefn_t *__sigrestore_t;
-
-#define SIG_DEL ((__force __sighandler_t)0)
-#define SIG_IGN ((__force __sighandler_t)1)
-#define SIG_ERR ((__force __sighandler_t)-1)
+typedef __restorefn_t* __sigrestore_t;
 
 
-struct sigaction {
+
+#define SIG_DEL ((__sighandler_t)0)
+#define SIG_IGN ((__sighandler_t)1)
+#define SIG_ERR ((__sighandler_t)-1)
+
+struct k_sigaction {
     __sighandler_t sa_handler;
     unsigned long sa_flags;
     __sigrestore_t sa_restorer;
-    struct sigset_t sa_mask;
+    sigset_t sa_mask;
 };
+
+struct sigaction {
+    void (*sa_handler)(int);
+    // void (*sa_sigaction)(int, siginfo_t *, void *);
+    sigset_t sa_mask;
+    int sa_flags;
+    void (*sa_restorer)(void);
+};
+
+
 
 
 
 /* system calls */
-long
-sys_read(int fd, char* buf, size_t count);
+long sys_read(int fd, char* buf, size_t count);
 long sys_write(int fd, const void* buf, size_t count);
 long sys_open(const char* filename, int flags, ... /*mode*/);
 long sys_close(unsigned int fd);
@@ -229,9 +243,10 @@ long sys_setgid(gid_t gid);
 long sys_geteuid();
 long sys_getegid();
 long sys_alarm(unsigned int seconds);
-long sys_rt_sigaction(int, const struct sigaction *newact, struct sigaction *oldact, size_t sigsetsize);
-long sys_rt_sigprocmask(int how, struct sigset_t *newset, struct sigset_t *oldset, size_t sigsetsize);
-
+long sys_rt_sigaction(int signum, const struct k_sigaction* newact, struct k_sigaction* oldact, size_t sigsetsize);
+long sys_rt_sigprocmask(int how, const sigset_t* newset, sigset_t* oldset, size_t sigsetsize);
+long sys_rt_sigpending(sigset_t* set, size_t sigsetsize);
+void signal_return();
 /* wrappers */
 ssize_t read(int fd, char* buf, size_t count);
 ssize_t write(int fd, const void* buf, size_t count);
@@ -277,25 +292,36 @@ unsigned int alarm(unsigned int seconds);
 typedef void (*sighandler_t)(int);
 sighandler_t signal(int signum, sighandler_t handler);
 
-int sigaction(int signum, const struct sigaction *newact, struct sigaction *oldact);
+int sigaction(int signum, const struct sigaction* newact, struct sigaction* oldact);
 
-int sigprocmask(int how, const struct sigset_t *newset, struct sigset_t *oldset);
+int sigprocmask(int how, const sigset_t* newset, sigset_t* oldset);
 
 /*initializes the signal set given by set to empty, with all signals excluded from the set*/
 /*0 on success, -1 on error*/
-int sigempty(struct sigset_t *set);
+int sigemptyset(sigset_t* set);
 
 /*initializes set to full, includeing all signal*/
-int sigfillset(struct sigset_t *set);
+int sigfillset(sigset_t* set);
 
 /*aad and delete respectively signal signum from set*/
-int sigaddset(struct sigset_t *set, int signum);
+int sigaddset(sigset_t* set, int signum);
 
-int sigdelset(struct sigset_t *set, int signum);
+int sigdelset(sigset_t* set, int signum);
 
 /*tests whether signum is a member of set*/
 /*return 1 when signum is member, 0 is not, -1 when error*/
-int sigismember(const struct sigset_t *set, int signum);
+int sigismember(const sigset_t* set, int signum);
 
+int sigpending(sigset_t* set);
+
+
+typedef struct jmp_buf_s{
+    long long reg[8];
+    sigset_t mask;
+} jmp_buf[1];
+
+int setjmp(jmp_buf env);
+
+void longjmp(jmp_buf env, int val);
 
 #endif /* __LIBMINI_H__ */

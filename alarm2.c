@@ -3,7 +3,8 @@
 int main() {
 	sigset_t s;
 	sigemptyset(&s);
-	sigaddset(&s, SIGALRM);
+    sigaddset(&s, SIGALRM);
+    /* sigfillset(&s); */
 	sigprocmask(SIG_BLOCK, &s, NULL);
 	alarm(3);
 	sleep(5);

@@ -15,7 +15,7 @@ LD_SRC=libmini.a start.o -L. -L..
 LFLAG=-m elf_x86_64 --dynamic-linker /lib64/ld-linux-x86-64.so.2
 
 
-all: $(ARCHIVE) $(SO_FILE) $(OBJ_FILE)
+all: $(ARCHIVE) $(SO_FILE) $(OBJ_FILE) $(SRC_FILE)
 	@echo $(.DEFAULT_GOAL)
 	@echo 'SUCCESFULL'
 

@@ -239,6 +239,102 @@ bit operation
 1 << n
 1 >> n
  */
+int sigemptyset(sigset_t* set)
+{
+    set->sig[0] = 0;
+    return 0;
+}
+
+int sigaddset(sigset_t* set, int signum)
+{
+
+    if ((signum < 1) || (signum > 29)) {
+        return -1;
+    } else {
+
+        set->sig[0] |= (1 << (signum - 1));
+        return 0;
+    }
+}
+
+int sigfillset(sigset_t* set)
+{
+    for (int i = 0; i < 30; i++) {
+        set->sig[0] |= (1 << i);
+    }
+    return 0;
+}
+
+int sigismember(const sigset_t* set, int signum)
+{
+    if ((signum < 1) || (signum > 29)) {
+        return -1;
+    } else {
+        unsigned long mask = 0;
+        mask |= 1 << (signum - 1);
+        if ((mask & set->sig[0]) > 0) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+}
+
+int sigprocmask(int how, const sigset_t* newset, sigset_t* oldset)
+{
+    long ret = sys_rt_sigprocmask(how, newset, oldset, 8);
+
+    WRAPPER_RETval(int);
+}
+
+sighandler_t signal(int signum, sighandler_t handler)
+{
+    struct sigaction new_sa, old_sa;
+    new_sa.sa_handler = handler;
+    /* new_sa.sa_flags = SA_ONESHOT | SA_NOMASK; */
+    sigemptyset(&new_sa.sa_mask);
+
+    if (signum == SIGALRM) {
+#ifdef SA_INTERRUPT
+        new_sa.sa_flags |= SA_INTERRUPT;
+#endif
+    } else {
+#ifdef SA_RESTART
+        new_sa.sa_flags |= SA_RESTART;
+#endif
+    }
+    if (sigaction(signum, &new_sa, &old_sa) < 0)
+    {
+        return (SIG_ERR);
+    }
+    return (old_sa.sa_handler);
+}
+
+int sigaction(int signum, const struct sigaction* newact, struct sigaction* oldact)
+{
+    struct k_sigaction new_kact, old_kact;
+
+    new_kact.sa_handler = newact->sa_handler;
+    new_kact.sa_flags = newact->sa_flags;
+    new_kact.sa_flags |= SA_RESTORER;
+    new_kact.sa_mask = newact->sa_mask;
+    new_kact.sa_restorer = signal_return;
+
+    long ret = sys_rt_sigaction(signum, &new_kact, &old_kact, 8);
+
+    oldact->sa_handler = old_kact.sa_handler;
+    oldact->sa_flags = old_kact.sa_flags;
+    oldact->sa_mask = old_kact.sa_mask;
+    oldact->sa_restorer = old_kact.sa_restorer;
+
+    WRAPPER_RETval(int);
+}
+
+int sigpending(sigset_t* set)
+{
+    long ret = sys_rt_sigpending(set, 8);
+    WRAPPER_RETval(int);
+}
 
 #define PERRMSG_MIN 0
 #define PERRMSG_MAX 34

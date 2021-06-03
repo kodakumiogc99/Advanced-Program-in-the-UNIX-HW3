@@ -1,12 +1,12 @@
 #include "libmini.h"
 
-void handler(int s) { /* do nothing */ }
+void handler(int s) { }
 
 int main() {
 	sigset_t s;
 	sigemptyset(&s);
 	sigaddset(&s, SIGALRM);
-	sigprocmask(SIG_BLOCK, &s, NULL);
+    sigprocmask(SIG_BLOCK, &s, NULL);
 	signal(SIGALRM, SIG_IGN);
 	signal(SIGINT, handler);
 	alarm(1);

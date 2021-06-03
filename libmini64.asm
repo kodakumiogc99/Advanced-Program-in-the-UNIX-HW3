@@ -52,9 +52,9 @@ extern	errno
 	gensys 107, geteuid
 	gensys 108, getegid
     gensys  37, alarm
-    gensys  13, sigaction
-    gensys  14, sigprocmask
-    gensys 127, sigpending
+    gensys  13, rt_sigaction
+    gensys  14, rt_sigprocmask
+    gensys 127, rt_sigpending
 
 
 	global open:function
@@ -105,4 +105,86 @@ sleep_failed:
 sleep_quit:
 	add	rsp, 32
 	ret
+
+
+
+    global signal_return:function
+signal_return:
+    mov rax, 15
+    syscall
+    ret
+
+
+;pop RAX: pop return address to rax
+;mov [RCX + 56], RAX save it in the buffer
+
+    global setjmp:function
+setjmp:
+    push R10
+    mov [RDI], RBX
+    mov [RDI + 8], RSP
+    mov [RDI + 16], RBP
+    mov [RDI + 24], R12
+    mov [RDI + 32], R13
+    mov [RDI + 40], R14
+    mov [RDI + 48], R15
+
+    push RDI
+    mov RDX, [RDI + 64];old = RDX
+    mov RDI, 0 ;how = 0
+    mov RSI, 0 ;new = NULL
+    mov R10, 8 ;size_t = 8
+    mov RAX, 14
+    syscall
+    pop RDI
+    mov [RDI + 64], RAX
+
+    pop R10
+    pop RAX
+    mov [RDI + 56], RAX
+
+    push RAX
+    mov RAX, 0
+    ret
+
+
+ ;take out the top of stack(return address)
+ ;put [rcx + 56] to the top of stack (return address save before)
+ ;ret to return
+
+    global longjmp:function
+longjmp:
+    pop RAX
+    push RSI
+    push R10
+
+    push RDI
+
+    ;address of save mask, put it to RSI(new mask)
+    mov RSI, [RDI + 64]
+
+    ;how = SIG_SETMASK
+    mov RDI, 2
+    ;oldmask = NULL
+    mov RDX, 0
+    mov R10, 8
+    mov RAX, 14
+    syscall
+
+    pop RDI
+    pop R10
+    pop RSI
+
+    mov RBX, [RDI]
+    mov RSP, [RDI + 8]
+    mov RBP, [RDI + 16]
+    mov R12, [RDI + 24]
+    mov R13, [RDI + 32]
+    mov R14, [RDI + 40]
+    mov R15, [RDI + 48]
+    mov RAX, [RDI + 56]
+    push RAX
+    mov RAX,RSI
+    ret
+
 
