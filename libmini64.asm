@@ -130,14 +130,13 @@ setjmp:
     mov [RDI + 48], R15
 
     push RDI
-    mov RDX, [RDI + 64];old = RDX
-    mov RDI, 0 ;how = 0
+    lea RDX, [RDI + 64];old = RDX
+    mov RDI, 2 ;how = 2
     mov RSI, 0 ;new = NULL
     mov R10, 8 ;size_t = 8
     mov RAX, 14
     syscall
     pop RDI
-    mov [RDI + 64], RAX
 
     pop R10
     pop RAX
@@ -161,7 +160,7 @@ longjmp:
     push RDI
 
     ;address of save mask, put it to RSI(new mask)
-    mov RSI, [RDI + 64]
+    lea RSI, [RDI + 64]
 
     ;how = SIG_SETMASK
     mov RDI, 2
@@ -184,7 +183,11 @@ longjmp:
     mov R15, [RDI + 48]
     mov RAX, [RDI + 56]
     push RAX
+    cmp RSI, 0
+    je  set1
     mov RAX,RSI
     ret
-
+set1:
+    mov RAX, 1
+    ret
 

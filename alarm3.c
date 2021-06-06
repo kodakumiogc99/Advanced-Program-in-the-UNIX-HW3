@@ -7,7 +7,7 @@ int main() {
 	sigemptyset(&s);
 	sigaddset(&s, SIGALRM);
     sigprocmask(SIG_BLOCK, &s, NULL);
-	signal(SIGALRM, SIG_IGN);
+    signal(SIGALRM, SIG_IGN);
 	signal(SIGINT, handler);
 	alarm(1);
 	pause();

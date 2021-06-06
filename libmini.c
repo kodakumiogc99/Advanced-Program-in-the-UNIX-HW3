@@ -242,42 +242,62 @@ bit operation
 int sigemptyset(sigset_t* set)
 {
     set->sig[0] = 0;
-    return 0;
+    long ret = 0;
+    WRAPPER_RETval(int);
 }
 
 int sigaddset(sigset_t* set, int signum)
 {
+    long ret;
 
     if ((signum < 1) || (signum > 29)) {
-        return -1;
+        ret =  -1;
     } else {
 
         set->sig[0] |= (1 << (signum - 1));
-        return 0;
+        ret =  0;
     }
+    WRAPPER_RETval(int);
+}
+
+
+int sigdelset(sigset_t* set, int signum)
+{
+    long ret;
+    if((signum < 1) || (signum > 29))
+    {
+        ret =  -1;
+    }
+    else
+    {
+        set->sig[0] &= ~(1 << (signum -1));
+        ret =  0;
+    }
+    WRAPPER_RETval(int);
 }
 
 int sigfillset(sigset_t* set)
 {
-    for (int i = 0; i < 30; i++) {
-        set->sig[0] |= (1 << i);
-    }
-    return 0;
+    set->sig[0] = -1;
+    long ret = 0;
+    WRAPPER_RETval(int);
 }
 
 int sigismember(const sigset_t* set, int signum)
 {
+    long ret;
     if ((signum < 1) || (signum > 29)) {
-        return -1;
+        ret =  -1;
     } else {
         unsigned long mask = 0;
         mask |= 1 << (signum - 1);
         if ((mask & set->sig[0]) > 0) {
-            return 1;
+            ret =  1;
         } else {
-            return 0;
+            ret =  0;
         }
     }
+    WRAPPER_RETval(int);
 }
 
 int sigprocmask(int how, const sigset_t* newset, sigset_t* oldset)
@@ -335,6 +355,53 @@ int sigpending(sigset_t* set)
     long ret = sys_rt_sigpending(set, 8);
     WRAPPER_RETval(int);
 }
+
+static const char* sigmsg[]={
+    "SIGHUP 1\n",
+    "SIGINT 2\n",
+    "SIGQUIT 3\n",
+    "SIGILL 4\n",
+    "SIGTRAP 5\n",
+    "SIGABRT 6\n",
+    "SIGBUS 7\n",
+    "SIGFPE 8\n",
+    "SIGKILL 9\n",
+    "SIGUSR1 10\n",
+    "SIGSEGV 11\n",
+    "SIGUSR2 12\n",
+    "SIGPIPE 13\n",
+    "SIGALRM 14\n",
+    "SIGTERM 15\n",
+    "SIGSTKFLT 16\n",
+    "SIGCHLD 17\n",
+    "SIGCONT 18\n",
+    "SIGSTOP 19\n",
+    "SIGTSTP 20\n",
+    "SIGTTIN 21\n",
+    "SIGTTOU 22\n",
+    "SIGURG 23\n",
+    "SIGXCPU 24\n",
+    "SIGXFSZ 25\n",
+    "SIGVTALRM 26\n",
+    "SIGPROF 27\n",
+    "SIGWINCH 28\n",
+    "SIGIO 29\n"
+};
+
+void sigtest(sigset_t* set)
+{
+    for( int i = 1; i < 30; i++)
+    {
+        unsigned long tmp = 0;
+        tmp |= ( 1 << (i - 1));
+        if ((set->sig[0] & tmp) > 0)
+        {
+            write(1, sigmsg[i-1], strlen(sigmsg[i-1]));
+        }
+
+    }
+}
+
 
 #define PERRMSG_MIN 0
 #define PERRMSG_MAX 34

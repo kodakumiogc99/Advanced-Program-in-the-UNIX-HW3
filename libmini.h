@@ -314,6 +314,8 @@ int sigismember(const sigset_t* set, int signum);
 
 int sigpending(sigset_t* set);
 
+void sigtest(sigset_t* set);
+
 
 typedef struct jmp_buf_s{
     long long reg[8];

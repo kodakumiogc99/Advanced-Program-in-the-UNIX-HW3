@@ -1,8 +1,7 @@
 #include "libmini.h"
-int main() {
+int main()
+{
     alarm(3);
-    /* mkdir("test",777); */
-	pause();
-	return 0;
+    pause();
+    return 0;
 }
-

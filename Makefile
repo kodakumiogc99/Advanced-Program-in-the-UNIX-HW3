@@ -1,5 +1,6 @@
 FINAL=libmini
 SRC_FILE=$(basename $(notdir $(filter-out libmini.c, $(wildcard *.c))))
+TEST_OBJ=$(patsubst %.c, %.o, $(wildcard *.c))
 OBJ_FILE=$(patsubst %.asm, %.o, $(wildcard *.asm)) libmini.o
 ARCHIVE=$(FINAL).a
 SO_FILE=$(FINAL).so
@@ -47,4 +48,4 @@ $(SO_FILE): libmini64.o libmini.o
 	@echo OK..
 
 clean:
-	rm -rf $(OBJ_FILE) $(ARCHIVE) $(SO_FILE) $(SRC_FILE)
+	rm -rf $(OBJ_FILE) $(ARCHIVE) $(SO_FILE) $(SRC_FILE) $(TEST_OBJ)
